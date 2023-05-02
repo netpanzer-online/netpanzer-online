@@ -15,6 +15,10 @@ TODO - something about writing server-side mods in typescript.
 
 # Development
 
+## Contributing
+
+We are not yet ready for external contributors - probably will after first milestone is reached.
+
 ## Project Structure
 
 - [./client](./client) Contains the client renderer.
