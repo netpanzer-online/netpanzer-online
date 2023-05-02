@@ -41,4 +41,4 @@ For those curious :) Here are the thoughts so far on picking TS:
 - The major benefit is we can share code between server and client easily, and compile for the web. While frameworks like Rust's Bevy were considered, they don't seem mature enough yet.
 - We can build UIs quickly using web technologies (CSS), which is a major pain point of game dev.
 - Using a scripting language makes modding easy.
-- The server code is very jit-friendly, since it's just the same code in a loop over and over, so after JIT kicks in the server will be very fast (100+fps) for many clients. In fact, we should be able to support many more clients than the original game.
+- The server code should be very jit-friendly, since it's just the same code in a loop over and over, so after JIT kicks in the server will be very fast (100+fps) for many clients. In fact, we should be able to support many more clients than the original game.

@@ -8,6 +8,7 @@
     "compile-watch": "esbuild client.ts --bundle --outdir=. --watch"
   },
   "dependencies": {
+    "core": "./../core"
   },
   "devDependencies": {
     "esbuild": "^0.17.7",
