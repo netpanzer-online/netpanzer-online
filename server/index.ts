@@ -36,7 +36,18 @@ function tick() {
     for (const unit of serverState.units) {
         tickUnit(serverState, unit);
     }
-    // TODO cleanup
+    for (const obj of serverState.objectives) {
+        tickObjective(serverState, obj);
+    }
+    tickMap(); // game count down timer, win scenarios, etc
+    // TODO cleanup?
+    for (const op of serverState.pendingOps) {
+        const opStr = JSON.stringify(op); // we could also use msgpack or something, however this should normally only be a few bytes
+        for (const client of serverState.clients) {
+            client.socket.send(opStr);
+        }
+    }
+    serverState.pendingOps = []; // on client reconnect we just send whole game state, so don't need to keep ops around past one tick
     process.nextTick(() => { // TODO set target FPS, also maybe throttle when no clients connected.
         tick();
     });
@@ -46,6 +57,7 @@ tick();
 const wss = new WebSocketServer({port: 8787});
 wss.on('connection', function connection(ws) {
     console.log('Got a connection.');
+    // TODO handshake
     serverState.lastUserConnectedTime = Date.now();
 
     ws.on('error', console.error);
