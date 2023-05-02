@@ -1,0 +1,17 @@
+{
+  "name": "netpanzer-online-client",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./worker",
+    "compile": "esbuild client.ts --bundle --outdir=public/src",
+    "compile-watch": "esbuild client.ts --bundle --outdir=. --watch"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "esbuild": "^0.17.7",
+    "nodemon": "^2.0.22",
+    "typescript": "^4.9.5"
+  }
+}

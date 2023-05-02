@@ -1,0 +1,6 @@
+node_modules
+.idea
+# we use ts
+*.js
+# we use less
+*.css
