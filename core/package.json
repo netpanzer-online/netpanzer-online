@@ -3,9 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./worker",
-    "compile": "esbuild public/src/app.ts --bundle --outdir=public/src",
-    "compile-watch": "esbuild public/src/app.ts --bundle --outdir=public/src --watch",
+    "compile": "esbuild index.ts --bundle --outdir=.",
+    "compile-watch": "esbuild index.ts --bundle --outdir=. --watch"
   },
   "dependencies": {
 
