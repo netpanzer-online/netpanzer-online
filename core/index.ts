@@ -29,9 +29,11 @@ export interface Unit {
     id: UnitID
     x: UnitX
     y: UnitY
-    path?: [UnitX, UnitY][]
-    path_step?: number
-    last_step_time?: number
+    health: number
+    damage: number
+    path: [UnitX, UnitY][]
+    path_step: number
+    last_step_time: number
 }
 
 export type ObjectiveID = number;
