@@ -1,53 +1,36 @@
-import {Projectile, GameMap, GameSessionId, Objective, Op, TileData, Unit} from "core"
+import {Projectile, SessionId, Objective, TileData, Unit, Player, Op, MoveUnitReq, MoveUnitReqCode} from "core"
 import {WebSocket, WebSocketServer} from 'ws';
-import {select_initial_map} from "./map";
-import {tickUnit} from "./units";
-import {tickProjectile} from "./projectiles";
-
-export interface ServerState {
-    projectiles: Projectile[]
-    sessionId: GameSessionId
-    units: Unit[]
-    objectives: Objective[]
-    tiles?: TileData
-    lastUserConnectedTime?: number // if all users disconnect for a long period, we will drop the session.
-    password?: string
-    clients: Client[]
-    pendingOps: Op[]
-}
-
-interface Client {
-    connectionId: string
-    socket: WebSocket
-}
-
-let serverState: ServerState = {
-    currentMap: select_initial_map(),
-    lastUserConnectedTime: undefined,
-    password: undefined,
-    clients: [],
-    pendingOps: []
-}
+import {handle_move_unit_request, tick_unit} from "./units";
+import {tick_projectile} from "./projectiles";
+import {tick_objective} from "./objectives";
+import {
+    get_new_server_state,
+    get_server_state,
+    handle_player_join_request,
+    handle_player_re_join_request,
+    tick_map
+} from "./map";
 
 function tick() {
-    for (const bullet of serverState.projectiles) {
-        tickProjectile(serverState, bullet);
+    const server_state = get_server_state();
+    for (const bullet of server_state.projectiles) {
+        tick_projectile(server_state, bullet);
     }
-    for (const unit of serverState.units) {
-        tickUnit(serverState, unit);
+    for (const unit of server_state.units) {
+        tick_unit(server_state, unit);
     }
-    for (const obj of serverState.objectives) {
-        tickObjective(serverState, obj);
+    for (const obj of server_state.objectives) {
+        tick_objective(server_state, obj);
     }
-    tickMap(); // game count down timer, win scenarios, etc
-    // TODO cleanup?
-    for (const op of serverState.pendingOps) {
+    tick_map(server_state); // game count down timer, win scenarios, etc
+
+    for (const op of server_state.pending_ops) {
         const opStr = JSON.stringify(op); // we could also use msgpack or something, however this should normally only be a few bytes
-        for (const client of serverState.clients) {
+        for (const client of server_state.clients) {
             client.socket.send(opStr);
         }
     }
-    serverState.pendingOps = []; // on client reconnect we just send whole game state, so don't need to keep ops around past one tick
+    server_state.pending_ops = []; // on client reconnect we just send whole game state, so don't need to keep ops around past one tick
     process.nextTick(() => { // TODO set target FPS, also maybe throttle when no clients connected.
         tick();
     });
@@ -57,14 +40,30 @@ tick();
 const wss = new WebSocketServer({port: 8787});
 wss.on('connection', function connection(ws) {
     console.log('Got a connection.');
-    // TODO handshake
-    serverState.lastUserConnectedTime = Date.now();
+    get_server_state().last_user_connected_time = Date.now();
 
     ws.on('error', console.error);
 
     ws.on('message', function message(data) {
-        console.log('received: %s', data);
+        // console.log('received', data);
+        try {
+            const op: Op = JSON.parse(data.toString('utf8'));
+            switch (op[0]) {
+                case 'JoinGameReq':
+                    handle_player_join_request(ws, op);
+                    break;
+                case 'RejoinGameReq':
+                    handle_player_re_join_request(ws, op);
+                    break;
+                case MoveUnitReqCode:
+                    handle_move_unit_request(ws, op);
+                    break;
+            }
+        } catch (e) {
+            console.error('Failed to handle message', data, e);
+        }
     });
 
     ws.send('something');
 });
+
