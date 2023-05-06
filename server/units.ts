@@ -1,7 +1,7 @@
 import {MoveUnitReq, Unit, UnitID, UnitPathUpdatedCode} from "core";
 import {get_server_state, ServerState} from "./map";
 import {WebSocket} from "ws";
-import {AStar} from "fast-astar";
+import {find_path} from "./pathing";
 
 export function tick_unit(state: ServerState, unit: Unit) {
 
@@ -27,10 +27,7 @@ export function handle_move_unit_request(ws: WebSocket, req: MoveUnitReq) {
     if (!unit) {
         return // TODO send err
     }
-    const astar = new AStar(state.grid); // it looks like we need to create this object every time, which creates several maps internally :(
-    const path = astar.search([unit.x, unit.y], [new_target_x, new_target_y], {
-        rightAngle: false // allow diagonal
-    });
+    const path = find_path(state, unit.x, unit.y, new_target_x, new_target_y);
     unit.path = path;
     unit.path_step = 0;
     unit.last_step_time = 0;

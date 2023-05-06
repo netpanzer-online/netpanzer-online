@@ -1,4 +1,15 @@
-import {JoinGameReq, Objective, Op, Player, Projectile, RejoinGameReq, SessionId, TileData, Unit} from "core";
+import {
+    JoinGameReq,
+    Objective,
+    Op,
+    Player,
+    Projectile,
+    RejoinGameReq,
+    SessionId,
+    TileData,
+    Unit,
+    UnitDefinition
+} from "core";
 import {send_op} from "./ops";
 import {WebSocket} from "ws";
 import {Grid} from "fast-astar";
@@ -8,6 +19,7 @@ export interface ServerState {
     game_duration?: number
     game_end_time?: number // optionally have set map duration
     grid: Grid,
+    id_counter: number
     last_user_connected_time?: number // if all users disconnect for a long period, we will drop the session.
     objectives: Objective[]
     max_players: number
@@ -17,6 +29,7 @@ export interface ServerState {
     session_id: SessionId
     tiles?: TileData
     units: Unit[]
+    unit_definitions: UnitDefinition[],
 }
 
 interface Client {
@@ -38,9 +51,11 @@ export function get_new_server_state(old?: ServerState): ServerState {
         grid: new Grid({
             // note - this can take a lot of memory (10+mb) for larger maps. TODO experiment with custom A* with map-backed storage.
             // some other alternatives would be polygon based path finding
+            // probably optimal structure is float8array which would only be 1-2mb for larger maps
             col: 1024, // TODO based on map. Note - netpanzer did not have tile-based movement, even though the units positioned themselves in grids, units could be on the edge of a "tile".
             row: 1024
         }),
+        id_counter: 0,
         last_user_connected_time: undefined,
         objectives: [],
         max_players: old?.max_players, // TODO per-map
@@ -49,7 +64,8 @@ export function get_new_server_state(old?: ServerState): ServerState {
         projectiles: [],
         session_id: undefined,
         tiles: undefined,
-        units: []
+        units: [],
+        unit_definitions: [] // TODO read from config
     }
 }
 
@@ -72,6 +88,8 @@ export function end_game(state: ServerState) {
 }
 
 export function handle_player_join_request(ws: WebSocket, req: JoinGameReq) {
+    // TODO VALIDATE KEY
+    // TODO VALIDATE duplicate username (?)
     if (server_state.clients.length === server_state.max_players) {
         send_op(ws, ['RejoinGameRes', {
             allowed: false,
@@ -92,6 +110,7 @@ export function handle_player_join_request(ws: WebSocket, req: JoinGameReq) {
     server_state.clients.push({
         socket: ws,
         player: {
+            key: req[1].player.key,
             username: req[1].player.username,
             flag: req[1].player.flag
         }
@@ -100,6 +119,7 @@ export function handle_player_join_request(ws: WebSocket, req: JoinGameReq) {
         session_id: server_state.session_id,
         units: server_state.units,
         objectives: server_state.objectives,
+        unit_definitions: server_state.unit_definitions,
         tiles: server_state.tiles,
     }]);
 }
@@ -129,8 +149,14 @@ export function handle_player_re_join_request(ws: WebSocket, req: RejoinGameReq)
     // });
     send_op(ws, ['LoadMap', {
         session_id: server_state.session_id,
-        units: server_state.units,
         objectives: server_state.objectives,
         tiles: server_state.tiles,
+        units: server_state.units,
+        unit_definitions: server_state.unit_definitions,
     }]);
+}
+
+export function next_id() {
+    server_state.id_counter++;
+    return server_state.id_counter;
 }
