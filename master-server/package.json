@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "start": "node ./worker",
-    "compile": "esbuild public/src/app.ts --bundle --outdir=public/src",
-    "compile-watch": "esbuild public/src/app.ts --bundle --outdir=public/src --watch"
+    "compile": "esbuild public/src/app.ts --bundle --platform=node --outdir=public/src",
+    "compile-watch": "esbuild public/src/app.ts --bundle --platform=node --outdir=public/src --watch"
   },
   "dependencies": {
 

@@ -11,7 +11,12 @@ import {
     tick_map
 } from "./map";
 
+const TARGET_FPS = 100;
+const TARGET_FRAME_MS = 1_000 / TARGET_FPS;
+let last_frame_report_time = Date.now();
+
 function tick() {
+    const start = Date.now();
     const server_state = get_server_state();
     for (const bullet of server_state.projectiles) {
         tick_projectile(server_state, bullet);
@@ -31,9 +36,14 @@ function tick() {
         }
     }
     server_state.pending_ops = []; // on client reconnect we just send whole game state, so don't need to keep ops around past one tick
-    process.nextTick(() => { // TODO set target FPS, also maybe throttle when no clients connected.
-        tick();
-    });
+
+    const end = Date.now();
+    if (start - last_frame_report_time > 1000) {
+        const frame_duration = end - start;
+        console.log(`Frame Time: ${frame_duration}ms, ~${(1000 / frame_duration).toFixed(0)}fps`);
+        last_frame_report_time = start;
+    }
+    setTimeout(tick, Math.min(end - (start + TARGET_FRAME_MS), TARGET_FRAME_MS));
 }
 tick();
 
