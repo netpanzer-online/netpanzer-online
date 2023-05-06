@@ -49,9 +49,7 @@ export function get_new_server_state(old?: ServerState): ServerState {
         game_duration: old?.game_duration,
         game_end_time: old && old.game_duration ? Date.now() + old.game_duration : undefined,
         grid: new Grid({
-            // note - this can take a lot of memory (10+mb) for larger maps. TODO experiment with custom A* with map-backed storage.
-            // some other alternatives would be polygon based path finding
-            // probably optimal structure is float8array which would only be 1-2mb for larger maps
+            // TODO switch to rtree (rbush looks good)
             col: 1024, // TODO based on map. Note - netpanzer did not have tile-based movement, even though the units positioned themselves in grids, units could be on the edge of a "tile".
             row: 1024
         }),
