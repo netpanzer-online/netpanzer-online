@@ -14,6 +14,7 @@ import {
 const TARGET_FPS = 100;
 const TARGET_FRAME_MS = 1_000 / TARGET_FPS;
 let last_frame_report_time = Date.now();
+let last_frame_end_time;
 
 function tick() {
     const start = Date.now();
@@ -38,13 +39,17 @@ function tick() {
     server_state.pending_ops = []; // on client reconnect we just send whole game state, so don't need to keep ops around past one tick
 
     const end = Date.now();
+    const frame_duration = end - start;
     if (start - last_frame_report_time > 1000) {
-        const frame_duration = end - start;
-        console.log(`Frame Time: ${frame_duration}ms, ~${(1000 / frame_duration).toFixed(0)}fps`);
+        const end_to_end_time = end - last_frame_end_time;
+        console.log(`Frame Time: ${end_to_end_time}ms (${frame_duration}ms of work), ~${(1000 / end_to_end_time).toFixed(0)}fps`);
         last_frame_report_time = start;
     }
-    setTimeout(tick, Math.min(end - (start + TARGET_FRAME_MS), TARGET_FRAME_MS));
+    last_frame_end_time = end;
+    const frame_delay = frame_duration > TARGET_FRAME_MS ? 0 : TARGET_FRAME_MS - frame_duration;
+    setTimeout(tick, frame_delay);
 }
+
 tick();
 
 const wss = new WebSocketServer({port: 8787});
