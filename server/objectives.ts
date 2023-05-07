@@ -1,6 +1,7 @@
 import { Objective } from "core";
 import {next_id, ServerState} from "./map";
 import {find_path} from "./pathing";
+import {add_unit} from "./units";
 
 export function tick_objective(state: ServerState, objective: Objective) {
     if (objective.currently_spawning) {
@@ -19,8 +20,7 @@ export function tick_objective(state: ServerState, objective: Objective) {
                 x: objective.spawn_x,
                 y: objective.spawn_y
             };
-            state.units.push(new_unit);
-            state.pending_ops.push(['uc', new_unit]);
+            add_unit(state, new_unit);
         }
     }
 }

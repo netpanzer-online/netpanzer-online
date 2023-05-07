@@ -11,6 +11,7 @@ export function add_unit(state: ServerState, unit: Unit) {
     state.unit_index.insert(unit);
     state.units.push(unit);
     state.units_by_id.set(unit.id, unit);
+    state.pending_ops.push(['uc', unit]);
 }
 
 export function get_unit(state: ServerState, unit_id: UnitID) : Unit | null {
