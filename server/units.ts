@@ -4,7 +4,8 @@ import {WebSocket} from "ws";
 import {find_path} from "./pathing";
 
 export function tick_unit(state: ServerState, unit: Unit) {
-
+    // TODO check if in objective and increment counter
+    // TODO check if idle and shoot nearby
 }
 
 export function add_unit(state: ServerState, unit: Unit) {

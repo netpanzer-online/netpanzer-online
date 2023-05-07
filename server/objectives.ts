@@ -1,6 +1,6 @@
 import { Objective } from "core";
 import {next_id, ServerState} from "./map";
-import {find_path} from "./pathing";
+import {find_path_with_open_spot_around} from "./pathing";
 import {add_unit} from "./units";
 
 export function tick_objective(state: ServerState, objective: Objective) {
@@ -15,7 +15,7 @@ export function tick_objective(state: ServerState, objective: Objective) {
                 id: next_id(),
                 last_step_time: 0,
                 np_key: objective.np_key,
-                path: find_path(state, objective.spawn_x, objective.spawn_y, objective.rp_x, objective.rp_y),
+                path: find_path_with_open_spot_around(state, objective.spawn_x, objective.spawn_y, objective.rp_x, objective.rp_y),
                 path_step: 0,
                 x: objective.spawn_x,
                 y: objective.spawn_y

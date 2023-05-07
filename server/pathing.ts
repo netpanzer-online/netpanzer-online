@@ -17,3 +17,9 @@ export function find_path(state: ServerState, from_x: number, from_y: number, to
     }
     return result;
 }
+
+export function find_path_with_open_spot_around(state: ServerState, from_x: number, from_y: number, to_x: number, to_y: number): [number, number][] {
+    const path_to_spot = find_path(state, from_x, from_y, to_x, to_y);
+    // TODO find open spot
+    return path_to_spot;
+}
