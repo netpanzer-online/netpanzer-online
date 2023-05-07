@@ -1,10 +1,19 @@
 import {ServerState} from "./map";
-import {AStar} from "fast-astar";
 
-export function find_path(state: ServerState, from_x: number, from_y: number, to_x: number, to_y: number) {
-    // fast-astar is not actually that fast. we should replace the grid with a float8array
-    const astar = new AStar(state.grid); // it looks like we need to create this object every time, which creates several maps internally :(
-    return astar.search([from_x, from_y], [to_x, to_y], {
-        rightAngle: false // allow diagonal
+export function find_path(state: ServerState, from_x: number, from_y: number, to_x: number, to_y: number): [number, number][] {
+    const raw = state.navmesh.findPath({
+        x: from_x,
+        y: from_y
+    }, {
+        x: to_x,
+        y: to_y
     });
+    const result = [];
+    // this is not great, but sending many objects over wire with repeated x/y is not either.
+    // we will probably have to fork "navmesh" to return the type we want, which gets rid of allocating this second array.
+    // also, the navmesh library has many internal allocations it makes that are unnecessary.
+    for (const item of raw) {
+        result.push([item.x, item.y]);
+    }
+    return result;
 }

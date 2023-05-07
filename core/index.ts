@@ -1,4 +1,5 @@
 export type NPKey = string; // your netpanzer key
+export type ServerTime = number;
 
 export interface Player {
     key: NPKey
@@ -48,6 +49,7 @@ export interface UnitDefinition {
     damage: number
     health: number
     shoot_delay: number
+    size: number
     spawn_delay: number
 }
 
@@ -56,16 +58,24 @@ export type ObjectiveSpawnX = number;
 export type ObjectiveSpawnY = number;
 export type ObjectiveRallyPointX = number;
 export type ObjectiveRallyPointY = number;
+export type ObjectiveBoundStartX = number;
+export type ObjectiveBoundStartY = number;
+export type ObjectiveBoundEndX = number;
+export type ObjectiveBoundEndY = number;
 
 export interface Objective {
-    id: ObjectiveID
+    minX: ObjectiveBoundStartX,
+    minY: ObjectiveBoundStartY,
+    maxX: ObjectiveBoundEndX,
+    maxY: ObjectiveBoundEndY,
     currently_spawning?: UnitDefinition
-    np_key: NPKey
+    id: ObjectiveID
     last_spawn_time?: number
-    spawn_x: ObjectiveSpawnX
-    spawn_y: ObjectiveSpawnY
+    np_key: NPKey
     rp_x: ObjectiveRallyPointX
     rp_y: ObjectiveRallyPointY
+    spawn_x: ObjectiveSpawnX
+    spawn_y: ObjectiveSpawnY
 }
 
 export type TileData = string; // TODO
@@ -73,8 +83,9 @@ export type SessionId = string; // every session has a unique id to help with re
 
 export type LoadMap = ['LoadMap', {
     session_id: SessionId
+    server_time: ServerTime
     units: Unit[]
-    unit_definitions: UnitDefinition[]
+    unit_definitions: Map<UnitDefinitionID, UnitDefinition>
     objectives: Objective[]
     tiles?: TileData
 }]; // sent on initial connect, and on reconnect.

@@ -8,28 +8,54 @@ import {
     SessionId,
     TileData,
     Unit,
-    UnitDefinition
+    UnitDefinition, UnitDefinitionID, UnitID
 } from "core";
 import {send_op} from "./ops";
 import {WebSocket} from "ws";
-import {Grid} from "fast-astar";
+import {NavMesh} from "navmesh";
+import RBush from "rbush";
+
+class UnitIndex extends RBush<Unit> {
+    toBBox(unit: Unit) {
+        // this could potentially be a performance problem, but we'll see
+        const definition = server_state.unit_definitions[unit.d];
+        const size_half = definition.size / 2;
+        return {
+            minX: unit.x - size_half,
+            minY: unit.y - size_half,
+            maxX: unit.x + size_half,
+            maxY: unit.y + size_half
+        };
+    }
+
+    compareMinX(a, b) {
+        return a.x - b.x;
+    }
+
+    compareMinY(a, b) {
+        return a.y - b.y;
+    }
+}
 
 export interface ServerState {
     clients: Client[]
     game_duration?: number
     game_end_time?: number // optionally have set map duration
-    grid: Grid,
     id_counter: number
     last_user_connected_time?: number // if all users disconnect for a long period, we will drop the session.
     objectives: Objective[]
+    objective_index: RBush<Objective>, // to quickly see if unit is taking an objective
     max_players: number
+    navmesh: NavMesh, // for navigation - around buildings, hills, etc
     password?: string
     pending_ops: Op[]
     projectiles: Projectile[]
     session_id: SessionId
     tiles?: TileData
     units: Unit[]
-    unit_definitions: UnitDefinition[],
+    units_by_id: Map<UnitID, Unit>
+    unit_definitions: Map<UnitDefinitionID, UnitDefinition>,
+    unit_index: UnitIndex, // to find units in range, and find open positions to move, etc
 }
 
 interface Client {
@@ -48,22 +74,21 @@ export function get_new_server_state(old?: ServerState): ServerState {
         clients: [],
         game_duration: old?.game_duration,
         game_end_time: old && old.game_duration ? Date.now() + old.game_duration : undefined,
-        grid: new Grid({
-            // TODO switch to rtree (rbush looks good)
-            col: 1024, // TODO based on map. Note - netpanzer did not have tile-based movement, even though the units positioned themselves in grids, units could be on the edge of a "tile".
-            row: 1024
-        }),
         id_counter: 0,
         last_user_connected_time: undefined,
         objectives: [],
+        objective_index: new RBush<Objective>(16),
         max_players: old?.max_players, // TODO per-map
+        navmesh: new NavMesh([]), // TODO build mesh from map
         password: old?.password,
         pending_ops: [],
         projectiles: [],
         session_id: undefined,
         tiles: undefined,
         units: [],
-        unit_definitions: [] // TODO read from config
+        units_by_id: new Map<UnitID, Unit>(),
+        unit_definitions: new Map<UnitDefinitionID, UnitDefinition>(), // TODO read from config
+        unit_index: new UnitIndex(10)
     }
 }
 
@@ -115,6 +140,7 @@ export function handle_player_join_request(ws: WebSocket, req: JoinGameReq) {
     });
     send_op(ws, ['LoadMap', {
         session_id: server_state.session_id,
+        server_time: Date.now(),
         units: server_state.units,
         objectives: server_state.objectives,
         unit_definitions: server_state.unit_definitions,
@@ -147,6 +173,7 @@ export function handle_player_re_join_request(ws: WebSocket, req: RejoinGameReq)
     // });
     send_op(ws, ['LoadMap', {
         session_id: server_state.session_id,
+        server_time: Date.now(),
         objectives: server_state.objectives,
         tiles: server_state.tiles,
         units: server_state.units,
