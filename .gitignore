@@ -1,6 +1,10 @@
 node_modules
 .idea
-# we use ts
-*.js
+# we use ts except for in tools
+client/*.js
+core/*.js
+master-server/*.js
+server/*.js
+site/*.js
 # we use less
 *.css
